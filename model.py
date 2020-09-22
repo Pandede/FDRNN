@@ -1,13 +1,14 @@
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 
 
 class FDDR(nn.Module):
     def __init__(self, lag, fuzzy_degree=3):
         super(FDDR, self).__init__()
 
-        self.autoencoder = AutoEncoder(lag * fuzzy_degree, 3)
-        self.rnn = SequentialLayer(150)
+        self.autoencoder = AutoEncoder(lag * fuzzy_degree, 10)
+        self.rnn = SequentialLayer(10)
 
     def forward(self, x):
         h = self.autoencoder(x)
@@ -48,7 +49,11 @@ class SequentialLayer(nn.Module):
     def __init__(self, n_features):
         super(SequentialLayer, self).__init__()
         self.rnn = nn.RNN(n_features, 3, 1)
+        signal = torch.tensor([[-1.], [0.], [1.]])
+        self.register_buffer('signal', signal)
 
     def forward(self, x):
         output, hidden_state = self.rnn(x)
-        return torch.softmax(output, -1), hidden_state
+        output = F.gumbel_softmax(output, hard=True, dim=-1)
+        delta = torch.matmul(output, self.signal)
+        return delta, hidden_state
