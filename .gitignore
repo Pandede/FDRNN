@@ -148,3 +148,6 @@ playground.py
 .idea/modules.xml
 .idea/vcs.xml
 Data/
+Pickle/
+Figure/
+evaluate.py

@@ -1,18 +1,21 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from sklearn.cluster import KMeans
 
 
 class FDDR(nn.Module):
     def __init__(self, lag, fuzzy_degree=3):
         super(FDDR, self).__init__()
 
+        self.fuzzy_layer = FuzzyLayer(fuzzy_degree)
         self.autoencoder = AutoEncoder(lag * fuzzy_degree, 10)
         self.rnn = SequentialLayer(10)
 
     def forward(self, x):
-        h = self.autoencoder(x)
-        output, _ = self.rnn(h)
+        h1 = self.fuzzy_layer(x)
+        h2 = self.autoencoder(h1)
+        output, _ = self.rnn(h2)
         return output
 
 
@@ -34,15 +37,33 @@ class AutoEncoder(nn.Module):
 
 
 class FuzzyLayer(nn.Module):
-    def __init__(self):
+    def __init__(self, fuzzy_degree):
         super(FuzzyLayer, self).__init__()
+        self.fuzzy_degree = fuzzy_degree
+
+        self.kmeans = KMeans(fuzzy_degree)
 
     @staticmethod
     def fuzzy_function(x, m, v, eps=1e-4):
         return torch.exp(-torch.pow(x - m, 2) / (v + eps))
 
-    def forward(self, x, mean, var):
-        return torch.cat([self.fuzzy_function(x, m, v) for m, v in zip(mean, var)], -1)
+    def forward(self, x):
+        # Clustering with K-Means, computing the mean and variance of each group
+        o = torch.zeros(*x.size(), self.fuzzy_degree, requires_grad=False)
+        for i in range(x.size(1)):
+            fragment = x[:, i].T
+            label = self.kmeans.fit(fragment).labels_
+
+            mean = torch.zeros(3)
+            var = torch.zeros(3)
+            for k in range(self.fuzzy_degree):
+                group = fragment[label == k]
+                mean[k] = torch.mean(group) if len(group) > 0 else 0
+                var[k] = torch.var(group) if len(group) > 1 else 0
+
+            # Propagating through fuzzy operation
+            o[:, i] = torch.cat([self.fuzzy_function(fragment, m, v) for m, v in zip(mean, var)], -1)
+        return torch.flatten(o, -2)
 
 
 class SequentialLayer(nn.Module):
