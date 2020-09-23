@@ -47,19 +47,27 @@ class FuzzyLayer(nn.Module):
     def fuzzy_function(x, m, v, eps=1e-4):
         return torch.exp(-torch.pow(x - m, 2) / (v + eps))
 
+    @staticmethod
+    def groupby(array, label):
+        perm = label.argsort()
+        sorted_array, sorted_label = array[perm], label[perm]
+        _, label_count = torch.unique(sorted_label, return_counts=True)
+        groups = torch.split(sorted_array, label_count.tolist())
+        return groups
+
     def forward(self, x):
         # Clustering with K-Means, computing the mean and variance of each group
         o = torch.zeros(*x.size(), self.fuzzy_degree, requires_grad=False)
         for i in range(x.size(1)):
             fragment = x[:, i].T
             label = self.kmeans.fit(fragment).labels_
+            label = torch.tensor(label)
 
-            mean = torch.zeros(3)
-            var = torch.zeros(3)
-            for k in range(self.fuzzy_degree):
-                group = fragment[label == k]
-                mean[k] = torch.mean(group) if len(group) > 0 else 0
-                var[k] = torch.var(group) if len(group) > 1 else 0
+            groups = self.groupby(fragment, label)
+            mean = [torch.mean(group) if len(group) > 0 else 0
+                    for group in groups]
+            var = [torch.var(group) if len(group) > 1 else 0
+                   for group in groups]
 
             # Propagating through fuzzy operation
             o[:, i] = torch.cat([self.fuzzy_function(fragment, m, v) for m, v in zip(mean, var)], -1)
