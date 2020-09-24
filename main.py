@@ -2,7 +2,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 import torch
 import torch.nn.functional as F
-from sklearn.cluster import KMeans
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
@@ -13,12 +12,12 @@ from model import FDDR
 # Parameters
 epochs = 300
 save_per_epoch = 20
-c = 0.01
+c = 0.05
 lag = 50
 fuzzy_degree = 3
 
 # Dataset
-dataset = IndexDataset('./Data', lag)
+dataset = IndexDataset('./Data/train', lag)
 dataloader = DataLoader(dataset, shuffle=False, batch_size=1)
 
 # Models
