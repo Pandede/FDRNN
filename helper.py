@@ -78,7 +78,7 @@ class AverageMeter:
         if indices is None:
             return np.mean(self.__history[:self.e_counter], axis=1)
         if indices == -1:
-            return np.mean(self.__history[self.e_counter])
+            return np.mean(self.__history[self.e_counter, :self.i_counter])
         if isinstance(indices, (tuple, list, int)):
             return np.mean(self.__history[indices])
         raise IndexError('Unknown indices, expected tuple, list or int')
