@@ -150,4 +150,4 @@ playground.py
 Data/
 Pickle/
 Figure/
-evaluate.py
+evaluator.py
