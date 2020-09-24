@@ -22,15 +22,15 @@ class FDDR(nn.Module):
 class AutoEncoder(nn.Module):
     def __init__(self, input_size, output_size):
         super(AutoEncoder, self).__init__()
-        self.layers = nn.Sequential(nn.Linear(input_size, 128),
+        self.layers = nn.Sequential(nn.Linear(input_size, 512),
+                                    nn.LeakyReLU(inplace=True),
+                                    nn.Linear(512, 256),
+                                    nn.LeakyReLU(inplace=True),
+                                    nn.Linear(256, 128),
                                     nn.LeakyReLU(inplace=True),
                                     nn.Linear(128, 64),
                                     nn.LeakyReLU(inplace=True),
-                                    nn.Linear(64, 32),
-                                    nn.LeakyReLU(inplace=True),
-                                    nn.Linear(32, 16),
-                                    nn.LeakyReLU(inplace=True),
-                                    nn.Linear(16, output_size))
+                                    nn.Linear(64, output_size))
 
     def forward(self, x):
         return self.layers(x)
@@ -77,7 +77,7 @@ class FuzzyLayer(nn.Module):
 class SequentialLayer(nn.Module):
     def __init__(self, n_features):
         super(SequentialLayer, self).__init__()
-        self.rnn = nn.RNN(n_features, 3, 1)
+        self.rnn = nn.LSTM(n_features, 3, 1)
         signal = torch.tensor([[-1.], [0.], [1.]])
         self.register_buffer('signal', signal)
 
