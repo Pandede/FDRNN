@@ -140,7 +140,6 @@ dmypy.json
 cython_debug/
 
 # Custom
-playground.py
 .idea/.gitignore
 .idea/2020_DRNN.iml
 .idea/inspectionProfiles/
@@ -151,5 +150,7 @@ Data/
 Pickle/
 Figure/
 evaluator.py
+playground.py
+fuzzize.py
 baseline_ddrl.py
 baseline_drl.py

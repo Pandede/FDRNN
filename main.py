@@ -5,23 +5,27 @@ import torch.nn.functional as F
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
-from handler import IndexDataset
+from handler import FuzzyIndexDataset
+# from handler import FuzzyStreamer
 from helper import AverageMeter
 from model import FDDR
 
 # Parameters
-epochs = 300
+epochs = 1000
 save_per_epoch = 20
 c = 0.05
 lag = 50
 fuzzy_degree = 3
 
+# streamer = FuzzyStreamer(lag, fuzzy_degree)
+# streamer.transform('./Data/futures/train', './Data/fuzzy_futures/train')
+
 # Dataset
-dataset = IndexDataset('./Data/train', lag)
+dataset = FuzzyIndexDataset('./Data/fuzzy_futures/train', lag)
 dataloader = DataLoader(dataset, shuffle=False, batch_size=1)
 
 # Models
-fddr = FDDR(lag)
+fddr = FDDR(lag, fuzzy_degree)
 
 # Tools
 optimizer = torch.optim.Adam(fddr.parameters())
@@ -30,9 +34,9 @@ reward_meter = AverageMeter(epochs, len(dataloader))
 # Training Phase
 for e in range(epochs):
     with tqdm(total=len(dataloader)) as progress_bar:
-        for i, (returns, fragments) in enumerate(dataloader):
+        for i, (returns, fragments, mean, var) in enumerate(dataloader):
             # Computing actions by using FDDR
-            delta = fddr(fragments).double().squeeze(-1)
+            delta = fddr(fragments, running_mean=mean, running_var=var).double().squeeze(-1)
 
             # Computing reward
             pad_delta = F.pad(delta, [1, 0])
