@@ -30,7 +30,8 @@ class AutoEncoder(nn.Module):
                                     nn.LeakyReLU(inplace=True),
                                     nn.Linear(128, 64),
                                     nn.LeakyReLU(inplace=True),
-                                    nn.Linear(64, output_size))
+                                    nn.Linear(64, output_size),
+                                    nn.Sigmoid())
 
     def forward(self, x):
         return self.layers(x)
@@ -40,8 +41,6 @@ class FuzzyLayer(nn.Module):
     def __init__(self, fuzzy_degree):
         super(FuzzyLayer, self).__init__()
         self.fuzzy_degree = fuzzy_degree
-
-        self.kmeans = KMeans(fuzzy_degree)
 
     @staticmethod
     def fuzzy_function(x, m, v, eps=1e-4):
@@ -57,17 +56,15 @@ class FuzzyLayer(nn.Module):
 
     def forward(self, x):
         # Clustering with K-Means, computing the mean and variance of each group
-        o = torch.zeros(*x.size(), self.fuzzy_degree, requires_grad=False)
+        o = torch.zeros(*x.size(), self.fuzzy_degree)
         for i in range(x.size(1)):
             fragment = x[:, i].T
-            label = self.kmeans.fit(fragment).labels_
+            label = KMeans(self.fuzzy_degree).fit(fragment).labels_
             label = torch.tensor(label)
 
             groups = self.groupby(fragment, label)
-            mean = [torch.mean(group) if len(group) > 0 else 0
-                    for group in groups]
-            var = [torch.var(group) if len(group) > 1 else 0
-                   for group in groups]
+            mean = [torch.mean(group) for group in groups]
+            var = [torch.var(group, unbiased=False) for group in groups]
 
             # Propagating through fuzzy operation
             o[:, i] = torch.cat([self.fuzzy_function(fragment, m, v) for m, v in zip(mean, var)], -1)
