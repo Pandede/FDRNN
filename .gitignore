@@ -151,6 +151,3 @@ Pickle/
 Figure/
 evaluator.py
 playground.py
-fuzzize.py
-baseline_ddrl.py
-baseline_drl.py

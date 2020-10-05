@@ -4,6 +4,30 @@ import torch.nn.functional as F
 from sklearn.cluster import KMeans
 
 
+class DDRL(nn.Module):
+    def __init__(self, lag):
+        super(DDRL, self).__init__()
+
+        self.autoencoder = AutoEncoder(lag, 10)
+        self.rnn = SequentialLayer(10)
+
+    def forward(self, x):
+        h = self.autoencoder(x)
+        output, _ = self.rnn(h)
+        return output
+
+
+class DRL(nn.Module):
+    def __init__(self, lag):
+        super(DRL, self).__init__()
+
+        self.rnn = SequentialLayer(lag)
+
+    def forward(self, x):
+        output, _ = self.rnn(x)
+        return output
+
+
 class FDDR(nn.Module):
     def __init__(self, lag, fuzzy_degree=3):
         super(FDDR, self).__init__()
