@@ -1,3 +1,6 @@
+import os
+from configparser import ConfigParser
+
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
@@ -10,20 +13,26 @@ from handler import FuzzyIndexDataset
 from helper import AverageMeter
 from model import FDDR
 
+cfg = ConfigParser()
+cfg.read('./config.ini')
+
 # Parameters
-epochs = 1000
-save_per_epoch = 20
-c = 0.05
-lag = 50
-fuzzy_degree = 3
+epochs = cfg.getint('default', 'epochs')
+save_per_epoch = cfg.getint('default', 'save_per_epoch')
+c = cfg.getfloat('default', 'c')
+lag = cfg.getint('default', 'lag')
+fuzzy_degree = cfg.getint('fddrl', 'fuzzy_degree')
+
+data_src = cfg.get('default', 'data_src')
+log_src = cfg.get('default', 'log_src')
 
 # streamer = FuzzyStreamer(lag, fuzzy_degree)
 # streamer.transform('./Data/futures/train', './Data/fuzzy_futures/train')
 
 # Dataset
-train_dataset = FuzzyIndexDataset('./Data/fuzzy_futures/train', lag)
+train_dataset = FuzzyIndexDataset(os.path.join(data_src, 'fuzzy_futures', 'train'), lag)
 train_dataloader = DataLoader(train_dataset, shuffle=False, batch_size=1)
-test_dataset = FuzzyIndexDataset('./Data/fuzzy_futures/test', lag)
+test_dataset = FuzzyIndexDataset(os.path.join(data_src, 'fuzzy_futures', 'test'), lag)
 test_dataloader = DataLoader(test_dataset, shuffle=False, batch_size=1)
 
 # Models
@@ -77,13 +86,13 @@ for e in range(epochs):
             (e, i, train_reward_meter.get_average(-1), test_reward_meter.get_average(-1)))
 
         if e % save_per_epoch == 0:
-            torch.save(fddr.state_dict(), './Pickle/fddrl.pkl')
+            torch.save(fddr.state_dict(), os.path.join(log_src, 'fddrl.pkl'))
         train_reward_meter.step()
         test_reward_meter.step()
 
 # Save the model and reward history
-torch.save(fddr.state_dict(), './Pickle/fddrl.pkl')
-np.save('./Pickle/fddrl_reward.npy', train_reward_meter.get_average())
+torch.save(fddr.state_dict(), os.path.join(log_src, 'fddrl.pkl'))
+np.save(os.path.join(log_src, 'fddrl_reward.npy'), train_reward_meter.get_average())
 
 # Plot the reward curve
 plt.plot(train_reward_meter.get_average())

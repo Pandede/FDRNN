@@ -4,19 +4,26 @@ import torch
 import torch.nn.functional as F
 from torch.utils.data import DataLoader
 from tqdm import tqdm
-
+from configparser import ConfigParser
+import os
 from handler import IndexDataset
 from helper import AverageMeter
 from model import DRL
 
+cfg = ConfigParser()
+cfg.read('./config.ini')
+
 # Parameters
-epochs = 1000
-save_per_epoch = 20
-c = 0.05
-lag = 50
+epochs = cfg.getint('default', 'epochs')
+save_per_epoch = cfg.getint('default', 'save_per_epoch')
+c = cfg.getfloat('default', 'c')
+lag = cfg.getint('default', 'lag')
+
+data_src = cfg.get('default', 'data_src')
+log_src = cfg.get('default', 'log_src')
 
 # Dataset
-dataset = IndexDataset('Data/futures/train', lag)
+dataset = IndexDataset(os.path.join(data_src, 'futures', 'train'), lag)
 dataloader = DataLoader(dataset, shuffle=False, batch_size=1)
 
 # Models
@@ -50,12 +57,12 @@ for e in range(epochs):
             progress_bar.update()
 
         if e % save_per_epoch == 0:
-            torch.save(drl.state_dict(), './Pickle/drl.pkl')
+            torch.save(drl.state_dict(), os.path.join(log_src, 'drl.pkl'))
         reward_meter.step()
 
 # Save the model and reward history
-torch.save(drl.state_dict(), './Pickle/drl.pkl')
-np.save('./Pickle/drl_reward.npy', reward_meter.get_average())
+torch.save(drl.state_dict(), os.path.join(log_src, 'drl.pkl'))
+np.save(os.path.join(log_src, 'drl_reward.npy'), reward_meter.get_average())
 
 # Plot the reward curve
 plt.plot(reward_meter.get_average())
