@@ -4,7 +4,14 @@ Implementing
 
 ## Preparation
 1. Prepare the index data as **CSV** file. The file must include column *CloseDiff*, which represents the index difference
-    `CloseDiff[t] = Index[t] - Index[t-1]`.
+    `CloseDiff[t] = Index[t] - Index[t-1]`. The CSV files must arrange as following directory structure:
+    ```
+   +-- Data
+   |    +-- futures
+   |    |   +-- future_2018-01-01.csv
+   |    |   +-- future_2018-01-02.csv
+   |    |   +-- ...
+   ```
 2. To reduce the training time, it is **strongly recommended** that computing the parameters of fuzzy representation before training. The vanilla index file can be transformed into fuzzy version via applying `FuzzyStreamer` in `handler.py`.
     ```python
    from handler import FuzzyStreamer
