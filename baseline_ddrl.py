@@ -12,7 +12,7 @@ from model import DDRL
 # Parameters
 epochs = 1000
 save_per_epoch = 20
-c = 0.01
+c = 0.05
 lag = 50
 
 # Dataset
